@@ -1,6 +1,6 @@
 import functools
 from typing import List, Tuple
-import timeit
+import functools, operator
 
 def solve_part_one(file: str) -> Tuple[List[int], List[int]]:
     totals, n_winning_numbers = [], []
