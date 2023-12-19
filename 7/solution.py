@@ -1,74 +1,76 @@
-import time
-import functools
-import operator
+from typing import List
 
 CARD_VALUES = {
     "A": 13,
     "K" : 12,
     "Q": 11,
-    "J": 10,
-    "T": 9,
-    "9": 8,
-    "8": 7,
-    "7": 6,
-    "6": 5,
-    "5": 4,
-    "4": 3,
-    "3": 2,
-    "2": 1
+    "J": 0,
+    "T": 10,
+    "9": 9,
+    "8": 8,
+    "7": 7,
+    "6": 6,
+    "5": 5,
+    "4": 4,
+    "3": 3,
+    "2": 2,
 }
 
+class Hand:
+    def __init__(self, cards: str, bid: int):
+        self.cards = cards
+        self.bid = bid
+        self.card_strengths = [CARD_VALUES[card] for card in self.cards]
+        d = dict.fromkeys(self.cards, 0)
+        for card in self.cards:
+            d[card] += 1
+        self.hand_value = self.get_hand_type(list(d.values()))
+
+        if "J" in self.cards and len(d.keys()) > 1:
+            wild_value = d.pop("J")
+            max_key = max(d, key=d.get)
+            d[max_key] += wild_value
+        
+        self.hand_value_j_wild = self.get_hand_type(list(d.values()))
+        self.rank = -1
+    
+    def get_hand_type(self, hand_counts: List[int]) -> int:
+        hand_set = set(hand_counts)
+        if hand_set == {5}:
+            return 5
+        elif hand_set == {4, 1}:
+            return 4
+        elif hand_set == {3, 2}:
+            return 3
+        elif hand_set == {3, 1}:
+            return 2
+        elif hand_set == {2, 1}:
+            if hand_counts.count(2) == 2:
+                return 1
+            else:
+                return 0
+        else:
+            return -1
+
+    def __repr__(self) -> str:
+        return f"{self.cards}: value: {self.hand_value}, wild_value: {self.hand_value_j_wild}, bid {self.bid} card strengths {self.card_strengths}, rank: {self.rank}\n"
+
 if __name__ == "__main__":
-    with open("test") as f:
+    with open("input") as f:
         inpt = f.read().split('\n')
         hands, bids = zip(*[x.split(" ") for x in inpt])
         bids = list(map(int, bids))
-        print(hands, bids)
-        hands_counts = []
-        hand_counts_idxs = {k: [] for k in range(1, 6)[::-1]}
-        for i, hand in enumerate(hands):
-            d = dict.fromkeys(hand, 0)
-            for card in hand:
-                d[card] += 1
-            max_hand_value = max(d.values())
-            hands_counts.append(max_hand_value)
-            hand_counts_idxs[max_hand_value].append(i)
-        print(hands_counts)
-        print(hand_counts_idxs)
-        # sorted_idxs = sorted(range(len(hands)), reverse=True, key = lambda i: hands_counts[i])
-        # hands = [hands[i] for i in sorted_idxs]
-        ranks = [0 for _ in range(len(hands))]
+        hands = [Hand(cards, bid) for cards, bid in zip(hands, bids)]
+        hands = sorted(hands, reverse=True, key=lambda x: (x.hand_value, *x.card_strengths))
         rank = len(hands)
-        for k, count_idx in hand_counts_idxs.items():
-            if len(count_idx):
-                print("i", count_idx, "n_match", k)
-                for card_idx in range(5):
-                    print("card_idx ", card_idx)
-                    card_strengths = [CARD_VALUES[hands[idx][card_idx]] for idx in count_idx]
-                    card_strength_idxs = sorted(range(len(count_idx)), reverse=True, key=lambda i: card_strengths[i])
-                    card_strengths_unique = list(dict.fromkeys(card_strengths))
-                    print("strenghts", card_strengths)
-                    if len(set(card_strengths)) > 1:
-                        removed_idxs = []
-                        for j in card_strength_idxs:
-                            if card_strengths[j] != card_strengths[0]:
-                                break
-                            ranks[count_idx[j]] = rank
-                            count_idx.pop(j)
-                            rank -= 1
-                    else:
-                        break
-        winnings = [hand_rank * bid for hand_rank, bid in zip(ranks, bids)]
-        print("ranks", ranks)
-        print(winnings)
-        total_winnings = sum(winnings)
-        # print(hands, bids, hands_counts)
-        start = time.time()
-        # res = solve_part_one(inpt)
-        end = time.time()
-        print(f"Part one solution: {total_winnings} taking {(end - start):.7f}s")
+        for hand in hands:
+            hand.rank = rank
+            rank -= 1
+        print(f"Part one: {sum(x.rank * x.bid for x in hands)}")
 
-        start = time.time()
-        # res = solve_part_two(inpt)
-        end = time.time()
-        # print(f"Part two solution: {res} taking {(end - start):.7f}s")
+        hands = sorted(hands, reverse=True, key=lambda x: (x.hand_value_j_wild, *x.card_strengths))
+        rank = len(hands)
+        for hand in hands:
+            hand.rank = rank
+            rank -= 1
+        print(f"Part two: {sum(x.rank * x.bid for x in hands)}")
