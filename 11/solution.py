@@ -1,6 +1,7 @@
 import itertools
 from typing import List
 import time
+from operator import itemgetter
 
 def get_row_col_sizes(
         expansion_factor: int, 
@@ -30,16 +31,14 @@ if __name__ == "__main__":
         paths_total_milx = 0
 
         for (galaxy_1_idx, galaxy_2_idx) in galaxy_combinations:
-            row_idxs = range(0, galaxy_2_idx[0] - galaxy_1_idx[0], 1 if galaxy_2_idx[0] > galaxy_1_idx[0] else -1)
-            col_idxs = range(0, galaxy_2_idx[1] - galaxy_1_idx[1], 1 if galaxy_2_idx[1] > galaxy_1_idx[1] else -1)
+            row_idxs = list(map(lambda x: galaxy_1_idx[0] + x, range(0, galaxy_2_idx[0] - galaxy_1_idx[0], 1 if galaxy_2_idx[0] > galaxy_1_idx[0] else -1)))
+            col_idxs = list(map(lambda x: galaxy_1_idx[1] + x, range(0, galaxy_2_idx[1] - galaxy_1_idx[1], 1 if galaxy_2_idx[1] > galaxy_1_idx[1] else -1)))
             
-            distance_row = sum([row_sizes_2x[galaxy_1_idx[0] + x] for x in row_idxs])
-            distance_col = sum([column_sizes_2x[galaxy_1_idx[1] + x] for x in col_idxs])
-            paths_total_2x += (distance_col + distance_row)
+            paths_total_2x += sum(map(row_sizes_2x.__getitem__, row_idxs))
+            paths_total_2x += sum(map(column_sizes_2x.__getitem__, col_idxs))
 
-            distance_row = sum([row_sizes_milx[galaxy_1_idx[0] + x] for x in row_idxs])
-            distance_col = sum([column_sizes_milx[galaxy_1_idx[1] + x] for x in col_idxs])
-            paths_total_milx += (distance_col + distance_row)
+            paths_total_milx += sum(map(row_sizes_milx.__getitem__, row_idxs))
+            paths_total_milx += sum(map(column_sizes_milx.__getitem__, col_idxs))
             
         end = time.time()
         print(f"Took {(end - start):5f}s")
